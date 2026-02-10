@@ -16,7 +16,7 @@ async function main(): Promise<void> {
     const server = createMcpServer();
     const stdioTransport = new StdioServerTransport();
     await server.connect(stdioTransport);
-    console.error('🚀 Figma Comment Pilot MCP Server v3.1 running on stdio');
+    console.error('🚀 Figma Design Pilot MCP Server v4.0 running on stdio');
   } else {
     console.error(`❌ Unknown transport: ${transport}. Use --transport=stdio or --transport=sse`);
     process.exit(1);

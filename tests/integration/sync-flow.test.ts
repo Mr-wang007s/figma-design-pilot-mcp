@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestDb, closeTestDb, type TestDb } from '../helpers.js';
 import type { FigmaComment, FigmaCommentsResponse } from '../../src/figma/types.js';
 

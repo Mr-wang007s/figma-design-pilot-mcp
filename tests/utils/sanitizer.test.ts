@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { sanitizeForLLM, isBotMessage, formatBotReply } from '../../src/utils/sanitizer.js';
 
 describe('sanitizeForLLM', () => {

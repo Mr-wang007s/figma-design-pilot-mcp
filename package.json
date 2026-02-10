@@ -1,9 +1,9 @@
 {
-  "name": "figma-comment-pilot-mcp",
-  "version": "3.1.0",
+  "name": "figma-design-pilot-mcp",
+  "version": "4.0.0",
   "private": true,
   "type": "module",
-  "description": "Figma Comment Pilot — Stateful MCP Server for AI-powered Figma comment management",
+  "description": "Figma Design Pilot — Stateful MCP Server for AI-powered design review and comment management",
   "bin": {
     "figma-mcp-server": "dist/index.js"
   },

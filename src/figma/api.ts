@@ -8,6 +8,13 @@ import type {
   FigmaPostCommentRequest,
   FigmaPostReactionRequest,
 } from './types.js';
+import type {
+  FigmaFileResponse,
+  FigmaFileNodesResponse,
+  FigmaImagesResponse,
+  FigmaVersionsResponse,
+  FigmaVariablesResponse,
+} from './design_types.js';
 
 const FIGMA_API_BASE = 'https://api.figma.com';
 
@@ -198,5 +205,127 @@ export async function getCurrentUser(): Promise<{ id: string; handle: string }> 
       auth,
     );
     return { id: response.data.id, handle: response.data.handle };
+  });
+}
+
+// ── Design Review API Methods ────────────────────────────────────────────────
+
+/** Heavy file limiter: 1 concurrent per call, generous timeout */
+const fileLimiter = new Bottleneck({
+  maxConcurrent: 1,
+  minTime: 2000,
+});
+
+/**
+ * Fetch full file JSON (node tree, components, styles).
+ * WARNING: Response can be very large (>10MB). Use depth/node_ids params to limit scope.
+ */
+export async function getFile(
+  fileKey: string,
+  opts?: { depth?: number; geometry?: string },
+): Promise<FigmaFileResponse> {
+  return fileLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const params: Record<string, string | number> = {};
+    if (opts?.depth !== undefined) params['depth'] = opts.depth;
+    if (opts?.geometry) params['geometry'] = opts.geometry;
+    const response = await client.get<FigmaFileResponse>(
+      `/v1/files/${fileKey}`,
+      { ...auth, params, timeout: 120_000 },
+    );
+    return response.data;
+  });
+}
+
+/**
+ * Fetch specific nodes from a file.
+ */
+export async function getFileNodes(
+  fileKey: string,
+  nodeIds: string[],
+): Promise<FigmaFileNodesResponse> {
+  return readLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const response = await client.get<FigmaFileNodesResponse>(
+      `/v1/files/${fileKey}/nodes`,
+      { ...auth, params: { ids: nodeIds.join(',') } },
+    );
+    return response.data;
+  });
+}
+
+/**
+ * Export node images (PNG, SVG, PDF, JPG).
+ */
+export async function getImages(
+  fileKey: string,
+  nodeIds: string[],
+  opts?: { format?: string; scale?: number },
+): Promise<FigmaImagesResponse> {
+  return readLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const response = await client.get<FigmaImagesResponse>(
+      `/v1/images/${fileKey}`,
+      {
+        ...auth,
+        params: {
+          ids: nodeIds.join(','),
+          format: opts?.format ?? 'png',
+          scale: opts?.scale ?? 2,
+        },
+      },
+    );
+    return response.data;
+  });
+}
+
+/**
+ * Get file version history.
+ */
+export async function getFileVersions(
+  fileKey: string,
+  opts?: { limit?: number },
+): Promise<FigmaVersionsResponse> {
+  return readLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const params: Record<string, number> = {};
+    if (opts?.limit) params['page_size'] = opts.limit;
+    const response = await client.get<FigmaVersionsResponse>(
+      `/v1/files/${fileKey}/versions`,
+      { ...auth, params },
+    );
+    return response.data;
+  });
+}
+
+/**
+ * Get local variables from a file (requires Enterprise plan).
+ */
+export async function getLocalVariables(
+  fileKey: string,
+): Promise<FigmaVariablesResponse> {
+  return readLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const response = await client.get<FigmaVariablesResponse>(
+      `/v1/files/${fileKey}/variables/local`,
+      { ...auth, timeout: 60_000 },
+    );
+    return response.data;
+  });
+}
+
+/**
+ * Get published variables from a file (requires Enterprise plan).
+ */
+export async function getPublishedVariables(
+  fileKey: string,
+): Promise<FigmaVariablesResponse> {
+  return readLimiter.schedule(async () => {
+    const auth = await getAuthConfig();
+    const response = await client.get<FigmaVariablesResponse>(
+      `/v1/files/${fileKey}/variables/published`,
+      { ...auth, timeout: 60_000 },
+    );
+    return response.data;
   });
 }

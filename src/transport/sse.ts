@@ -116,7 +116,7 @@ export function createSseApp(): Express {
   // ── Health Check ─────────────────────────────────────────────────────────
 
   app.get('/health', (_req: Request, res: Response) => {
-    res.json({ status: 'ok', version: '3.1' });
+    res.json({ status: 'ok', version: '4.0' });
   });
 
   return app;
@@ -131,7 +131,7 @@ export async function startSseServer(port: number): Promise<void> {
   const app = createSseApp();
 
   app.listen(port, '127.0.0.1', () => {
-    console.error(`🚀 Figma Comment Pilot MCP Server v3.1 running on http://127.0.0.1:${port}`);
+    console.error(`🚀 Figma Design Pilot MCP Server v4.0 running on http://127.0.0.1:${port}`);
     console.error(`   MCP endpoint:     http://127.0.0.1:${port}/mcp`);
     console.error(`   Webhook endpoint: http://127.0.0.1:${port}/webhook`);
     console.error(`   Health check:     http://127.0.0.1:${port}/health`);

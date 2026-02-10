@@ -68,6 +68,82 @@ export type ConfigRow = Selectable<ConfigTable>;
 export type NewConfig = Insertable<ConfigTable>;
 export type ConfigUpdate = Updateable<ConfigTable>;
 
+// ── File Snapshots Table (V4.0) ─────────────────────────────────────────────
+
+export interface FileSnapshotsTable {
+  file_key: string;
+  version_id: string;
+  fetched_at: Generated<string>;
+  file_name: string | null;
+  node_count: number | null;
+  components_json: string | null;
+  component_sets_json: string | null;
+  styles_json: string | null;
+}
+
+export type FileSnapshotRow = Selectable<FileSnapshotsTable>;
+export type NewFileSnapshot = Insertable<FileSnapshotsTable>;
+
+// ── Review Reports Table (V4.0) ─────────────────────────────────────────────
+
+export interface ReviewReportsTable {
+  report_id: string;
+  file_key: string;
+  version_id: string | null;
+  page_name: string | null;
+  created_at: Generated<string>;
+  total_nodes: number | null;
+  total_issues: number | null;
+  error_count: number | null;
+  warning_count: number | null;
+  info_count: number | null;
+  dimension_summary_json: string | null;
+  token_coverage_percent: number | null;
+  token_bound_count: number | null;
+  token_total_count: number | null;
+  score: number | null;
+  grade: string | null;
+}
+
+export type ReviewReportRow = Selectable<ReviewReportsTable>;
+export type NewReviewReport = Insertable<ReviewReportsTable>;
+
+// ── Review Issues Table (V4.0) ──────────────────────────────────────────────
+
+export interface ReviewIssuesTable {
+  issue_id: string;
+  report_id: string;
+  dimension: string;
+  severity: string;
+  rule_id: string;
+  node_id: string | null;
+  node_name: string | null;
+  node_type: string | null;
+  page_name: string | null;
+  message: string;
+  suggestion: string | null;
+  detail_json: string | null;
+  status: Generated<string>;         // DEFAULT 'OPEN'
+  comment_id: string | null;
+}
+
+export type ReviewIssueRow = Selectable<ReviewIssuesTable>;
+export type NewReviewIssue = Insertable<ReviewIssuesTable>;
+
+// ── Review Rules Table (V4.0) ───────────────────────────────────────────────
+
+export interface ReviewRulesTable {
+  rule_id: string;
+  dimension: string;
+  severity: Generated<string>;
+  enabled: Generated<number>;
+  config_json: string | null;
+  description: string | null;
+}
+
+export type ReviewRuleRow = Selectable<ReviewRulesTable>;
+export type NewReviewRule = Insertable<ReviewRulesTable>;
+
 // ── Database Schema ─────────────────────────────────────────────────────────
 
 export interface DatabaseSchema {
@@ -75,4 +151,8 @@ export interface DatabaseSchema {
   operations: OperationsTable;
   sync_state: SyncStateTable;
   config: ConfigTable;
+  file_snapshots: FileSnapshotsTable;
+  review_reports: ReviewReportsTable;
+  review_issues: ReviewIssuesTable;
+  review_rules: ReviewRulesTable;
 }

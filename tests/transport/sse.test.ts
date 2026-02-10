@@ -1,4 +1,3 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createTestDb, closeTestDb, type TestDb } from '../helpers.js';
 import type { Express } from 'express';
 import { createServer, type Server } from 'node:http';
@@ -78,29 +77,25 @@ describe('GET /health', () => {
     const res = await fetch(`${baseUrl}/health`);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ status: 'ok', version: '3.1' });
+    expect(body).toEqual({ status: 'ok', version: '4.0' });
   });
 });
 
-describe('POST /message', () => {
-  it('returns 400 without sessionId', async () => {
-    const res = await fetch(`${baseUrl}/message`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
+describe('GET /mcp', () => {
+  it('returns 400 without session ID header', async () => {
+    const res = await fetch(`${baseUrl}/mcp`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('session');
+  });
+
+  it('returns 400 with invalid session ID header', async () => {
+    const res = await fetch(`${baseUrl}/mcp`, {
+      headers: { 'mcp-session-id': 'nonexistent' },
     });
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.error).toContain('sessionId');
-  });
-
-  it('returns 404 with invalid sessionId', async () => {
-    const res = await fetch(`${baseUrl}/message?sessionId=nonexistent`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    expect(res.status).toBe(404);
+    expect(body.error).toContain('session');
   });
 });
 
@@ -154,24 +149,5 @@ describe('POST /webhook', () => {
     });
 
     expect(res.status).toBe(401);
-  });
-});
-
-describe('GET /sse', () => {
-  it('returns SSE content-type', async () => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 500);
-
-    try {
-      const res = await fetch(`${baseUrl}/sse`, {
-        signal: controller.signal,
-      });
-      // SSE connections return text/event-stream
-      expect(res.headers.get('content-type')).toContain('text/event-stream');
-    } catch {
-      // AbortError is expected — we just need to verify the headers
-    } finally {
-      clearTimeout(timeout);
-    }
   });
 });

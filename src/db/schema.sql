@@ -1,5 +1,9 @@
--- Figma Comment Pilot MCP Server — Database Schema
--- Version: 3.1
+-- Figma Design Pilot MCP Server — Database Schema
+-- Version: 4.0
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Comment Workflow Tables
+-- ═══════════════════════════════════════════════════════════════════════════
 
 -- 1. Comments table (core data, one row per comment, logically linked by threads)
 CREATE TABLE IF NOT EXISTS comments (
@@ -54,4 +58,74 @@ CREATE TABLE IF NOT EXISTS sync_state (
 CREATE TABLE IF NOT EXISTS config (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
+);
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Design Review Tables (V4.0)
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- 5. File snapshot cache (avoid refetching large files)
+CREATE TABLE IF NOT EXISTS file_snapshots (
+    file_key TEXT NOT NULL,
+    version_id TEXT NOT NULL,
+    fetched_at TEXT NOT NULL DEFAULT (datetime('now')),
+    file_name TEXT,
+    node_count INTEGER,
+    components_json TEXT,               -- JSON: file.components
+    component_sets_json TEXT,           -- JSON: file.componentSets
+    styles_json TEXT,                   -- JSON: file.styles
+    PRIMARY KEY (file_key, version_id)
+);
+
+-- 6. Review reports (historical tracking)
+CREATE TABLE IF NOT EXISTS review_reports (
+    report_id TEXT PRIMARY KEY,
+    file_key TEXT NOT NULL,
+    version_id TEXT,
+    page_name TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    total_nodes INTEGER,
+    total_issues INTEGER,
+    error_count INTEGER,
+    warning_count INTEGER,
+    info_count INTEGER,
+    dimension_summary_json TEXT,
+    token_coverage_percent REAL,
+    token_bound_count INTEGER,
+    token_total_count INTEGER,
+    score REAL,
+    grade TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_reports_file ON review_reports(file_key, created_at);
+
+-- 7. Review issues (individual findings)
+CREATE TABLE IF NOT EXISTS review_issues (
+    issue_id TEXT PRIMARY KEY,
+    report_id TEXT NOT NULL,
+    dimension TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    rule_id TEXT NOT NULL,
+    node_id TEXT,
+    node_name TEXT,
+    node_type TEXT,
+    page_name TEXT,
+    message TEXT NOT NULL,
+    suggestion TEXT,
+    detail_json TEXT,
+    status TEXT NOT NULL DEFAULT 'OPEN',
+    comment_id TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_issues_report ON review_issues(report_id, severity);
+CREATE INDEX IF NOT EXISTS idx_review_issues_dimension ON review_issues(dimension);
+
+-- 8. Review rule configuration (customizable)
+CREATE TABLE IF NOT EXISTS review_rules (
+    rule_id TEXT PRIMARY KEY,
+    dimension TEXT NOT NULL,
+    severity TEXT NOT NULL DEFAULT 'warning',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    config_json TEXT,
+    description TEXT
 );

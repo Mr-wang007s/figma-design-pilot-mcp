@@ -4,9 +4,11 @@ Guidelines for AI agents working in this repository.
 
 ## Project Overview
 
-Figma Comment Pilot MCP Server — a stateful MCP server that transforms Figma's flat
-comment stream into thread-based workflows for AI agents. TypeScript, Node.js >= 18,
-ESM-only (`"type": "module"`).
+Figma Design Pilot MCP Server — a stateful MCP server providing two core capabilities:
+1. **Design Review Engine**: AI-driven design quality checks (colors, spacing, typography, components, token coverage, structure, accessibility)
+2. **Comment Workflow**: Thread-based Figma comment management for AI agents
+
+TypeScript, Node.js >= 18, ESM-only (`"type": "module"`).
 
 ## Build & Test Commands
 
@@ -29,25 +31,59 @@ src/
 ├── index.ts              # Entry point (stdio or SSE via --transport flag)
 ├── config.ts             # Zod-validated env config, status emoji constants
 ├── core/
-│   ├── sync.ts           # Sync engine: fetch → diff → DB → thread DTOs
+│   ├── sync.ts           # Comment sync engine: fetch → diff → DB → thread DTOs
 │   ├── operations.ts     # Outbox pattern: enqueue → process → confirm/fail
-│   └── reconciler.ts     # Emoji reaction → local status reconciliation
+│   ├── reconciler.ts     # Emoji reaction → local status reconciliation
+│   └── review/           # ★ Design Review Engine (V4.0)
+│       ├── engine.ts     # Review pipeline: fetch → traverse → lint → score → persist
+│       ├── file_reader.ts # File JSON fetch, caching, node tree traversal
+│       ├── scoring.ts    # Score computation (0-100, A-F grades)
+│       └── rules/        # Lint rule modules (one per dimension)
+│           ├── color_lint.ts
+│           ├── spacing_lint.ts
+│           ├── typography_lint.ts
+│           ├── component_lint.ts
+│           ├── token_coverage.ts
+│           ├── structure_lint.ts
+│           └── a11y_lint.ts
 ├── db/
 │   ├── client.ts         # better-sqlite3 + Kysely setup, schema init
-│   ├── schema.sql        # DDL: comments, operations, sync_state, config
+│   ├── schema.sql        # DDL: comments, operations, sync_state, config + review tables
 │   └── types.ts          # Kysely table types (Generated, Selectable, etc.)
 ├── figma/
 │   ├── api.ts            # Axios + Bottleneck rate-limited Figma REST client
 │   ├── auth.ts           # OAuth 2.0 flow with localhost callback
-│   └── types.ts          # Figma API types + Thread/SyncResult DTOs
+│   ├── types.ts          # Figma Comment API types + Thread/SyncResult DTOs
+│   └── design_types.ts   # ★ Figma File/Node/Variable types + Review DTOs
 ├── mcp/
-│   ├── router.ts         # MCP Server setup, tool registration
+│   ├── router.ts         # MCP Server setup, 20 tool registrations
 │   └── tools/            # One file per MCP tool handler
+│       ├── sync_comments.ts      # Comment tools
+│       ├── post_reply.ts
+│       ├── set_status.ts
+│       ├── get_thread.ts
+│       ├── list_pending.ts
+│       ├── delete_own_reply.ts
+│       ├── design_review.ts      # ★ Review tools
+│       ├── review_colors.ts
+│       ├── review_spacing.ts
+│       ├── review_typography.ts
+│       ├── review_components.ts
+│       ├── review_token_coverage.ts
+│       ├── review_structure.ts
+│       ├── review_a11y.ts
+│       ├── get_file_structure.ts  # ★ Base data tools
+│       ├── get_variables.ts
+│       ├── get_components.ts
+│       ├── get_styles.ts
+│       ├── get_file_versions.ts
+│       └── export_images.ts
 ├── transport/
-│   └── sse.ts            # Express app: /sse, /message, /webhook, /health
+│   └── sse.ts            # Express app: /mcp, /webhook, /health
 └── utils/
     ├── hash.ts           # SHA256 idempotency keys, UUID generation
-    └── sanitizer.ts      # Prompt injection guard, bot message detection
+    ├── sanitizer.ts      # Prompt injection guard, bot message detection
+    └── color.ts          # ★ Color conversion, WCAG contrast ratio
 tests/                    # Mirrors src/ structure
 bin/auth-cli.ts           # OAuth CLI tool
 ```
@@ -151,6 +187,8 @@ afterEach(() => { closeTestDb(testDb.rawDb); });
 1. **Outbox pattern**: All Figma write operations go through `operations` table, never direct API calls from tool handlers
 2. **Single writer lock**: `withFileLock(fileKey, fn)` prevents concurrent sync/write on same file
 3. **Status reconciliation**: Figma emoji reactions are the source of truth — local status follows remote
-4. **Bot detection**: By user ID (`bot_user_id` in `sync_state`) OR message prefix (`[FCP]`)
+4. **Bot detection**: By user ID (`bot_user_id` in `sync_state`) OR message prefix (`[FDP]`)
 5. **Prompt injection guard**: All user content wrapped in `<user_content>` tags with HTML entity escaping before returning to LLM
 6. **Idempotency keys**: SHA256 of `file_key|root_id|op_type|normalized_content|agent_identity`
+7. **Design Review pipeline**: Fetch file JSON → cache → traverse node tree → run lint rules → score → persist report
+8. **Variables API degradation**: Non-Enterprise users get limited token checks (style-based only, no variable binding checks)

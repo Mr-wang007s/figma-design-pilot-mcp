@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import { generateIdempotencyKey, generateOpId } from '../../src/utils/hash.js';
 
 describe('generateIdempotencyKey', () => {
