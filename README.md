@@ -1,135 +1,206 @@
-# Figma Comment Pilot MCP
+# Figma Design Pilot MCP
 
-**v3.1** -- A stateful MCP server that transforms Figma's flat comment stream into thread-based structured workflows for AI agents.
+**v4.0** — A stateful MCP server providing AI-powered **Design Review** and **Comment Workflow** capabilities for Figma files. Works with Claude Desktop, Cursor, CodeBuddy, openClaw, and any MCP-compatible AI agent.
 
-## Features
+## What it does
 
-- **Thread-centric model** -- Groups flat Figma comments into conversation threads (root + replies + status)
-- **Outbox pattern** -- Idempotent write operations with automatic retry (PENDING -> CONFIRMED/FAILED)
-- **Status reconciliation** -- Maps emoji reactions to workflow states (OPEN / PENDING / DONE / WONTFIX)
-- **6 MCP tools** -- sync_comments, post_reply, set_status, get_thread, list_pending, delete_own_reply
-- **Dual transport** -- stdio (Claude Desktop, Cursor) + SSE/HTTP (openClaw)
-- **Webhook support** -- Receives Figma push notifications to trigger incremental sync
-- **OAuth 2.0** -- Localhost callback flow for desktop AI clients
-- **Rate limiting** -- Bottleneck-based (5 concurrent reads, 1 write/sec)
-- **Security** -- Prompt injection guard, bot self-reply prevention, webhook signature verification
+| Capability | Description |
+|------------|-------------|
+| **Design Review** | Automated 7-dimension quality audit: colors, spacing, typography, components, token coverage, structure, accessibility |
+| **Comment Workflow** | Thread-based Figma comment management with status tracking and idempotent writes |
+| **Base Data** | File structure, components, styles, variables, version history, image export |
 
 ## Quick Start
 
+### 1. Install
+
 ```bash
-# Install dependencies
+git clone https://github.com/anthropics/figma-design-pilot-mcp.git
+cd figma-design-pilot-mcp
 npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your Figma OAuth credentials or Personal Access Token
-
-# Authenticate via OAuth (optional if using PAT)
-npm run auth
-
-# Run in stdio mode (Claude Desktop / Cursor)
-npm run dev
-
-# Run in SSE mode (openClaw)
-npm run dev -- --transport=sse
-
-# Build for production
 npm run build
-node dist/index.js                    # stdio
-node dist/index.js --transport=sse    # SSE
 ```
 
-## Configuration
+### 2. Get a Figma Token
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `FIGMA_CLIENT_ID` | | Figma OAuth App Client ID |
-| `FIGMA_CLIENT_SECRET` | | Figma OAuth App Client Secret |
-| `FIGMA_PERSONAL_ACCESS_TOKEN` | | Alternative to OAuth -- set this for quick setup |
-| `DB_PATH` | `./data.db` | SQLite database file path |
-| `AUTH_CALLBACK_PORT` | `3456` | OAuth localhost callback port |
-| `BOT_REPLY_PREFIX` | `[FCP]` | Prefix prepended to all bot replies |
-| `SSE_PORT` | `3000` | HTTP/SSE server port |
-| `WEBHOOK_SECRET` | | HMAC secret for Figma webhook signature verification |
+Go to [Figma Settings → Personal Access Tokens](https://www.figma.com/developers/api#access-tokens) and create a token with **File content (Read)** and **Comments (Read/Write)** scopes.
 
-## Client Configuration
+### 3. Connect to your AI Client
 
-### Claude Desktop / Cursor
+#### Claude Desktop / Cursor / CodeBuddy
 
-Add to your MCP config (`claude_desktop_config.json` or Cursor settings):
+Add to your MCP config:
 
 ```json
 {
   "mcpServers": {
     "figma-pilot": {
       "command": "node",
-      "args": ["/absolute/path/to/figma-mcp-server/dist/index.js"],
+      "args": ["/path/to/figma-design-pilot-mcp/dist/index.js"],
       "env": {
-        "FIGMA_PERSONAL_ACCESS_TOKEN": "your-figma-pat"
+        "FIGMA_PERSONAL_ACCESS_TOKEN": "figd_xxxxx"
       }
     }
   }
 }
 ```
 
-### openClaw (SSE)
+#### Development mode (with tsx)
 
-Start the server with `--transport=sse`, then connect to:
-- **SSE endpoint**: `http://127.0.0.1:3000/sse`
-- **Message endpoint**: `http://127.0.0.1:3000/message`
+```json
+{
+  "mcpServers": {
+    "figma-pilot": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/figma-design-pilot-mcp/src/index.ts"],
+      "env": {
+        "FIGMA_PERSONAL_ACCESS_TOKEN": "figd_xxxxx"
+      }
+    }
+  }
+}
+```
 
-## MCP Tools
+#### SSE mode (openClaw / web clients)
 
-| Tool | Description | Key Parameters |
-|------|-------------|----------------|
-| `figma_sync_comments` | Fetch and diff comments from Figma, return threads needing attention | `file_key`, `force_full_sync` |
-| `figma_post_reply` | Reply to a thread via idempotent outbox | `file_key`, `root_comment_id`, `message` |
-| `figma_set_status` | Change thread status via emoji reactions | `file_key`, `comment_id`, `status` |
-| `figma_get_thread` | Get a single thread's full context from local DB | `file_key`, `thread_id` |
-| `figma_list_pending` | List all OPEN/PENDING threads (no network request) | `file_key`, `limit` |
-| `figma_delete_own_reply` | Delete a bot-generated reply (for corrections) | `file_key`, `comment_id` |
+```bash
+npm run dev -- --transport=sse
+# Server runs on http://127.0.0.1:3000
+```
+
+Then connect to: `http://127.0.0.1:3000/mcp`
+
+## MCP Tools (20)
+
+### Design Review (8 tools)
+
+| Tool | Description |
+|------|-------------|
+| `figma_design_review` | **Full review** — Run all 7 dimensions, returns scored report (0–100, A–F grade) |
+| `figma_review_colors` | Check hardcoded fills, strokes, gradients, shadows, opacity |
+| `figma_review_spacing` | Check padding, gap, corner radius, off-grid values, Auto Layout |
+| `figma_review_typography` | Validate text styles, font sizes, line heights, font families |
+| `figma_review_components` | Audit detached instances, missing main components, overrides, naming |
+| `figma_review_token_coverage` | Calculate Design Token variable binding coverage (%) |
+| `figma_review_structure` | Check default names, empty frames, deep nesting, hidden layers |
+| `figma_review_a11y` | WCAG contrast ratio, text size, touch target checks |
+
+### Base Data (6 tools)
+
+| Tool | Description |
+|------|-------------|
+| `figma_get_file_structure` | Get page and layer tree (names, types, sizes) |
+| `figma_get_variables` | Get all Design Tokens / Variables (Enterprise) |
+| `figma_get_components` | Get components and component sets |
+| `figma_get_styles` | Get published styles (color, text, effect, grid) |
+| `figma_get_file_versions` | Get version history |
+| `figma_export_images` | Export nodes as PNG, SVG, PDF, or JPG |
+
+### Comment Workflow (6 tools)
+
+| Tool | Description |
+|------|-------------|
+| `figma_sync_comments` | Fetch and diff comments, return threads needing attention |
+| `figma_post_reply` | Reply to a thread via idempotent outbox |
+| `figma_set_status` | Change thread status via emoji (👀 PENDING, ✅ DONE, 🚫 WONTFIX) |
+| `figma_get_thread` | Get a thread's full context from local DB |
+| `figma_list_pending` | List all OPEN/PENDING threads (instant, no network) |
+| `figma_delete_own_reply` | Delete a bot-generated reply |
+
+## Usage Examples
+
+### Run a Design Review
+
+Ask your AI agent:
+
+> "Review the design file https://www.figma.com/design/abc123/MyApp and tell me what issues to fix"
+
+The agent will call `figma_design_review` and return a structured report:
+
+```
+Score: 72/100 (C)
+Issues: 15 errors, 8 warnings
+
+Colors:
+  ❌ 12 hardcoded fill colors not bound to variables
+  ⚠️ 3 hardcoded stroke colors
+
+Token Coverage: 34%
+  fills: 20%, strokes: 0%, spacing: 80%, typography: 60%
+
+Structure:
+  ⚠️ 5 layers with default names ("Frame 1", "Rectangle 2")
+  ⚠️ 2 empty frames
+```
+
+### Manage Comments
+
+> "Sync comments from my Figma file and reply to any open threads"
+
+The agent calls `figma_sync_comments` → `figma_list_pending` → `figma_post_reply`.
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FIGMA_PERSONAL_ACCESS_TOKEN` | | Figma PAT — **recommended** for quick setup |
+| `FIGMA_CLIENT_ID` | | Figma OAuth App Client ID |
+| `FIGMA_CLIENT_SECRET` | | Figma OAuth App Client Secret |
+| `DB_PATH` | `./data.db` | SQLite database file path |
+| `SSE_PORT` | `3000` | HTTP server port (SSE mode) |
+| `BOT_REPLY_PREFIX` | `[FCP]` | Prefix for bot-generated replies |
+| `AUTH_CALLBACK_PORT` | `3456` | OAuth localhost callback port |
+| `WEBHOOK_SECRET` | | HMAC secret for Figma webhook verification |
 
 ## Architecture
 
 ```
-AI Client (Claude/Cursor/openClaw)
-    |
-    | JSON-RPC (stdio or SSE)
-    v
-MCP Router --> Sync Engine --> Figma REST API
-    |              |
-    |              v
-    |          SQLite DB (comments, operations, sync_state, config)
-    |              ^
-    |              |
-    +-------> Operations Manager (Outbox Pattern)
+AI Client (Claude / Cursor / CodeBuddy / openClaw)
+    │
+    │  JSON-RPC (stdio or Streamable HTTP)
+    ▼
+┌─────────────────────────────────────────────┐
+│  MCP Router (20 tools)                      │
+├─────────────┬──────────────┬────────────────┤
+│ Design      │ Base Data    │ Comment        │
+│ Review (8)  │ Tools (6)    │ Workflow (6)   │
+└──────┬──────┴──────┬───────┴───────┬────────┘
+       │             │               │
+       ▼             ▼               ▼
+┌─────────────┐ ┌─────────┐ ┌──────────────┐
+│ Review      │ │ Figma   │ │ Sync Engine  │
+│ Engine      │ │ REST    │ │ + Operations │
+│ (7 linters) │ │ API     │ │ (Outbox)     │
+└──────┬──────┘ └─────────┘ └──────┬───────┘
+       │                           │
+       ▼                           ▼
+┌──────────────────────────────────────────┐
+│  SQLite (better-sqlite3 + Kysely)        │
+│  8 tables: comments, operations,         │
+│  sync_state, config, file_snapshots,     │
+│  review_reports, review_issues,          │
+│  review_rules                            │
+└──────────────────────────────────────────┘
 ```
-
-**Sync Engine**: Fetches all comments from Figma, groups by thread, diffs against local DB, reconciles status from emoji reactions.
-
-**Outbox Pattern**: Write operations (reply, set status) are enqueued as PENDING records. A processor executes them against the Figma API and marks CONFIRMED or retries up to 3 times before marking FAILED.
-
-**Status Reconciliation**: Emoji reactions on Figma map to local status -- `(none)` = OPEN, eyes = PENDING, checkmark = DONE, prohibited = WONTFIX. Human actions on Figma always take priority.
-
-**Single Writer Lock**: Per-file mutex prevents concurrent sync/write operations from causing race conditions.
 
 ## Development
 
 ```bash
-npm run build        # Compile TypeScript
-npm run typecheck    # Type check without emit
-npm test             # Run tests (vitest)
-npm run test:watch   # Watch mode
-npm run test:coverage # Coverage report
+npm run build          # Compile TypeScript → dist/
+npm run typecheck      # Type check only (no emit)
+npm run dev            # Run with tsx (stdio)
+npm test               # Run tests (vitest)
+npm run test:watch     # Watch mode
+npm run test:coverage  # Coverage report
 ```
 
 ## Tech Stack
 
 - **Runtime**: Node.js >= 18
-- **Language**: TypeScript 5.x (strict mode)
+- **Language**: TypeScript 5.x (strict mode, ESM-only)
 - **MCP SDK**: @modelcontextprotocol/sdk
-- **Database**: better-sqlite3 + kysely (query builder)
-- **HTTP**: axios, express, cors
+- **Database**: better-sqlite3 + Kysely
+- **HTTP**: axios, express
 - **Rate Limiting**: bottleneck
 - **Validation**: zod
 - **Testing**: vitest

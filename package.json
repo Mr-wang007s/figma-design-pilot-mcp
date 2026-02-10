@@ -1,15 +1,41 @@
 {
   "name": "figma-design-pilot-mcp",
   "version": "4.0.0",
-  "private": true,
   "type": "module",
   "description": "Figma Design Pilot — Stateful MCP Server for AI-powered design review and comment management",
-  "bin": {
-    "figma-mcp-server": "dist/index.js"
+  "author": "wei wang",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anthropics/figma-design-pilot-mcp.git"
   },
+  "homepage": "https://github.com/anthropics/figma-design-pilot-mcp#readme",
+  "keywords": [
+    "figma",
+    "mcp",
+    "design-review",
+    "design-system",
+    "design-token",
+    "ai-agent",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "codebuddy"
+  ],
+  "bin": {
+    "figma-design-pilot": "dist/src/index.js"
+  },
+  "files": [
+    "dist",
+    "src/db/schema.sql",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
+    "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
     "auth": "tsx bin/auth-cli.ts",
     "typecheck": "tsc --noEmit",
