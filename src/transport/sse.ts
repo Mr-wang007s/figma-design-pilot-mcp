@@ -1,7 +1,8 @@
 import express from 'express';
 import type { Express, Request, Response } from 'express';
 import cors from 'cors';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { randomUUID } from 'node:crypto';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createMcpServer } from '../mcp/router.js';
 import { syncComments } from '../core/sync.js';
 import { appConfig } from '../config.js';
@@ -10,48 +11,80 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 // ── Express App Factory ──────────────────────────────────────────────────────
 
 /**
- * Create the Express app with SSE, message, webhook, and health endpoints.
+ * Create the Express app with Streamable HTTP MCP transport, webhook, and health endpoints.
  * Exported separately for testing.
  */
 export function createSseApp(): Express {
   const app = express();
   app.use(cors());
-  app.use(express.json());
 
-  // Active SSE transports keyed by session ID
-  const transports = new Map<string, SSEServerTransport>();
+  // Parse JSON for all routes EXCEPT /mcp (MCP transport reads the raw stream itself)
+  app.use((req, res, next) => {
+    if (req.path === '/mcp') return next();
+    express.json()(req, res, next);
+  });
 
-  // ── SSE Endpoint ─────────────────────────────────────────────────────────
+  // Active transports keyed by session ID
+  const transports = new Map<string, StreamableHTTPServerTransport>();
 
-  app.get('/sse', async (req: Request, res: Response) => {
+  // ── MCP Streamable HTTP Endpoint ──────────────────────────────────────────
+
+  // Handle POST (JSON-RPC messages including initialize)
+  app.post('/mcp', async (req: Request, res: Response) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+    // Existing session
+    if (sessionId && transports.has(sessionId)) {
+      const transport = transports.get(sessionId)!;
+      await transport.handleRequest(req, res);
+      return;
+    }
+
+    // New session (initialize request)
     const server = createMcpServer();
-    const transport = new SSEServerTransport('/message', res);
-    transports.set(transport.sessionId, transport);
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+    });
 
     transport.onclose = () => {
-      transports.delete(transport.sessionId);
+      if (transport.sessionId) {
+        transports.delete(transport.sessionId);
+      }
     };
 
     await server.connect(transport);
-    await transport.start();
+    await transport.handleRequest(req, res);
+
+    if (transport.sessionId) {
+      transports.set(transport.sessionId, transport);
+    }
   });
 
-  // ── JSON-RPC Message Endpoint ────────────────────────────────────────────
+  // Handle GET (SSE stream for server-initiated messages)
+  app.get('/mcp', async (req: Request, res: Response) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
 
-  app.post('/message', async (req: Request, res: Response) => {
-    const sessionId = req.query['sessionId'] as string | undefined;
-    if (!sessionId) {
-      res.status(400).json({ error: 'Missing sessionId query parameter' });
+    if (!sessionId || !transports.has(sessionId)) {
+      res.status(400).json({ error: 'Missing or invalid session ID. Send an initialize request first.' });
       return;
     }
 
-    const transport = transports.get(sessionId);
-    if (!transport) {
-      res.status(404).json({ error: 'Session not found. The SSE connection may have been closed.' });
+    const transport = transports.get(sessionId)!;
+    await transport.handleRequest(req, res);
+  });
+
+  // Handle DELETE (session termination)
+  app.delete('/mcp', async (req: Request, res: Response) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
+
+    if (!sessionId || !transports.has(sessionId)) {
+      res.status(404).json({ error: 'Session not found.' });
       return;
     }
 
-    await transport.handlePostMessage(req, res);
+    const transport = transports.get(sessionId)!;
+    await transport.handleRequest(req, res);
+    transports.delete(sessionId);
   });
 
   // ── Webhook Endpoint ─────────────────────────────────────────────────────
@@ -92,15 +125,14 @@ export function createSseApp(): Express {
 // ── Server Startup ───────────────────────────────────────────────────────────
 
 /**
- * Start the Express server with SSE transport.
+ * Start the Express server with Streamable HTTP transport.
  */
 export async function startSseServer(port: number): Promise<void> {
   const app = createSseApp();
 
   app.listen(port, '127.0.0.1', () => {
     console.error(`🚀 Figma Comment Pilot MCP Server v3.1 running on http://127.0.0.1:${port}`);
-    console.error(`   SSE endpoint:     http://127.0.0.1:${port}/sse`);
-    console.error(`   Message endpoint: http://127.0.0.1:${port}/message`);
+    console.error(`   MCP endpoint:     http://127.0.0.1:${port}/mcp`);
     console.error(`   Webhook endpoint: http://127.0.0.1:${port}/webhook`);
     console.error(`   Health check:     http://127.0.0.1:${port}/health`);
   });
