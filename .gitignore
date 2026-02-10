@@ -5,6 +5,7 @@ dist/
 *.db-shm
 .env
 .env.local
+.npmrc
 .DS_Store
 coverage/
 logs/
