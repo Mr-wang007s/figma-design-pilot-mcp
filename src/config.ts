@@ -14,7 +14,7 @@ const envSchema = z.object({
   DB_PATH: z.string().optional().default('./data.db'),
   AUTH_CALLBACK_PORT: z.coerce.number().int().positive().optional().default(3456),
   FIGMA_PERSONAL_ACCESS_TOKEN: z.string().optional().default(''),
-  BOT_REPLY_PREFIX: z.string().optional().default('[FCP]'),
+  BOT_REPLY_PREFIX: z.string().optional().default('[FDP]'),
   SSE_PORT: z.coerce.number().int().positive().optional().default(3000),
   WEBHOOK_SECRET: z.string().optional().default(''),
 });
