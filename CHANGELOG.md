@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook signature verification (HMAC-SHA256)
 - stdio transport for Claude Desktop / Cursor / CodeBuddy
 
-[4.0.0]: https://github.com/anthropics/figma-design-pilot-mcp/compare/v3.1.0...v4.0.0
-[3.1.0]: https://github.com/anthropics/figma-design-pilot-mcp/compare/v3.0.0...v3.1.0
-[3.0.0]: https://github.com/anthropics/figma-design-pilot-mcp/compare/v2.0.0...v3.0.0
-[2.0.0]: https://github.com/anthropics/figma-design-pilot-mcp/releases/tag/v2.0.0
+[4.0.0]: https://github.com/Mr-wang007s/figma-design-pilot-mcp/compare/v3.1.0...v4.0.0
+[3.1.0]: https://github.com/Mr-wang007s/figma-design-pilot-mcp/compare/v3.0.0...v3.1.0
+[3.0.0]: https://github.com/Mr-wang007s/figma-design-pilot-mcp/compare/v2.0.0...v3.0.0
+[2.0.0]: https://github.com/Mr-wang007s/figma-design-pilot-mcp/releases/tag/v2.0.0

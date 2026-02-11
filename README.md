@@ -15,7 +15,7 @@
 ### 1. Install
 
 ```bash
-git clone https://github.com/anthropics/figma-design-pilot-mcp.git
+git clone https://github.com/Mr-wang007s/figma-design-pilot-mcp.git
 cd figma-design-pilot-mcp
 npm install
 npm run build
