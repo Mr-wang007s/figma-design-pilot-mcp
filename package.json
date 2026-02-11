@@ -1,6 +1,6 @@
 {
   "name": "figma-design-pilot-mcp",
-  "version": "1.0.0",
+  "version": "4.0.0",
   "type": "module",
   "description": "Figma Design Pilot — Stateful MCP Server for AI-powered design review and comment management",
   "author": "wei wang",

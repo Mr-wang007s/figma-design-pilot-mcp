@@ -5,19 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.0.0 (2026-02-11)
-
-
-### Features
-
-* add SSE transport, CI workflow, README and project docs ([e630ea9](https://github.com/Mr-wang007s/figma-comment-pilot-mcp/commit/e630ea967be0e95f23a7c02279e7668354b023a5))
-* initial commit - Figma Comment Pilot MCP Server v3.1 ([863a4d9](https://github.com/Mr-wang007s/figma-comment-pilot-mcp/commit/863a4d908e800852f8d322014f458e97660fd644))
-
-
-### Bug Fixes
-
-* align BOT_REPLY_PREFIX default to [FDP] after project rename ([#1](https://github.com/Mr-wang007s/figma-comment-pilot-mcp/issues/1)) ([40699d9](https://github.com/Mr-wang007s/figma-comment-pilot-mcp/commit/40699d9b573321261ca5e2fa892557cf4566b9db))
-
 ## [4.0.0] - 2026-02-10
 
 ### ⚡ Breaking Changes

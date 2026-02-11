@@ -12,47 +12,20 @@
 
 ## Quick Start
 
-### 1. Install
-
-```bash
-git clone https://github.com/Mr-wang007s/figma-design-pilot-mcp.git
-cd figma-design-pilot-mcp
-npm install
-npm run build
-```
-
-### 2. Get a Figma Token
+### 1. Get a Figma Token
 
 Go to [Figma Settings → Personal Access Tokens](https://www.figma.com/developers/api#access-tokens) and create a token with **File content (Read)** and **Comments (Read/Write)** scopes.
 
-### 3. Connect to your AI Client
+### 2. Connect to your AI Client
 
-#### Claude Desktop / Cursor / CodeBuddy
-
-Add to your MCP config:
-
-```json
-{
-  "mcpServers": {
-    "figma-pilot": {
-      "command": "node",
-      "args": ["/path/to/figma-design-pilot-mcp/dist/index.js"],
-      "env": {
-        "FIGMA_PERSONAL_ACCESS_TOKEN": "figd_xxxxx"
-      }
-    }
-  }
-}
-```
-
-#### Development mode (with tsx)
+#### Option A: npx (recommended, zero install)
 
 ```json
 {
   "mcpServers": {
     "figma-pilot": {
       "command": "npx",
-      "args": ["tsx", "/path/to/figma-design-pilot-mcp/src/index.ts"],
+      "args": ["-y", "figma-design-pilot-mcp"],
       "env": {
         "FIGMA_PERSONAL_ACCESS_TOKEN": "figd_xxxxx"
       }
@@ -61,14 +34,35 @@ Add to your MCP config:
 }
 ```
 
-#### SSE mode (openClaw / web clients)
+#### Option B: SSE mode (for web clients / openClaw)
 
 ```bash
-npm run dev -- --transport=sse
-# Server runs on http://127.0.0.1:3000
+npx -y figma-design-pilot-mcp --transport=sse
 ```
 
-Then connect to: `http://127.0.0.1:3000/mcp`
+Then configure your client to connect to `http://127.0.0.1:3000/mcp`
+
+#### Option C: Run from source
+
+```bash
+git clone https://github.com/Mr-wang007s/figma-design-pilot-mcp.git
+cd figma-design-pilot-mcp
+npm install
+```
+
+```json
+{
+  "mcpServers": {
+    "figma-pilot": {
+      "command": "node",
+      "args": ["<path-to>/figma-design-pilot-mcp/dist/src/index.js"],
+      "env": {
+        "FIGMA_PERSONAL_ACCESS_TOKEN": "figd_xxxxx"
+      }
+    }
+  }
+}
+```
 
 ## MCP Tools (20)
 
@@ -148,7 +142,7 @@ The agent calls `figma_sync_comments` → `figma_list_pending` → `figma_post_r
 | `FIGMA_CLIENT_SECRET` | | Figma OAuth App Client Secret |
 | `DB_PATH` | `./data.db` | SQLite database file path |
 | `SSE_PORT` | `3000` | HTTP server port (SSE mode) |
-| `BOT_REPLY_PREFIX` | `[FCP]` | Prefix for bot-generated replies |
+| `BOT_REPLY_PREFIX` | `[FDP]` | Prefix for bot-generated replies |
 | `AUTH_CALLBACK_PORT` | `3456` | OAuth localhost callback port |
 | `WEBHOOK_SECRET` | | HMAC secret for Figma webhook verification |
 
