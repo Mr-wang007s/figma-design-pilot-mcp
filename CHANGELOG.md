@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0](https://github.com/Mr-wang007s/figma-design-pilot-mcp/compare/figma-design-pilot-mcp-v4.0.0...figma-design-pilot-mcp-v4.1.0) (2026-02-11)
+
+
+### 🚀 Features
+
+* add SSE transport, CI workflow, README and project docs ([e630ea9](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/e630ea967be0e95f23a7c02279e7668354b023a5))
+* initial commit - Figma Comment Pilot MCP Server v3.1 ([863a4d9](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/863a4d908e800852f8d322014f458e97660fd644))
+
+
+### 🐛 Bug Fixes
+
+* align BOT_REPLY_PREFIX default to [FDP] after project rename ([#1](https://github.com/Mr-wang007s/figma-design-pilot-mcp/issues/1)) ([40699d9](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/40699d9b573321261ca5e2fa892557cf4566b9db))
+* **ci:** fix release-please v4 output keys for npm publish ([#7](https://github.com/Mr-wang007s/figma-design-pilot-mcp/issues/7)) ([df9c6ca](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/df9c6ca891c4f9202207e3603d4131c5f651f523))
+* restore version to 4.0.0, update README and add semver enforcement ([#5](https://github.com/Mr-wang007s/figma-design-pilot-mcp/issues/5)) ([dde06aa](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/dde06aa58aaba0a6a451be20c0448d1691d6b0f2))
+* update repository URLs to match renamed GitHub repo ([#3](https://github.com/Mr-wang007s/figma-design-pilot-mcp/issues/3)) ([6bba717](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/6bba71762a8bf1fac206c1f9c6722509c77513cd))
+
+
+### 🔧 Refactor
+
+* 迁移至流式HTTP传输层 ([dc5eaee](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/dc5eaee4980e78b6b609552d65fcf4b36a441163))
+
+
+### 📝 Documentation
+
+* 升级 PRD 至 V4.0 并新增设计评审引擎 ([15b6682](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/15b66828812bcee012b6bd544330b7b15d929a6f))
+* 添加 CHANGELOG、LICENSE 和更新文档 ([6526e8f](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/6526e8f2385fced2aee39dddad9fb9757085e19b))
+
+
+### 🏗️ Maintenance
+
+* **main:** release 1.0.0 ([#2](https://github.com/Mr-wang007s/figma-design-pilot-mcp/issues/2)) ([7a032cc](https://github.com/Mr-wang007s/figma-design-pilot-mcp/commit/7a032cc010567fed9edce1e82cc20a9f8108691f))
+
 ## [4.0.0] - 2026-02-10
 
 ### ⚡ Breaking Changes
